@@ -1,0 +1,974 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>un lugar entre lugares</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300&display=swap">
+<style>
+/* Concepto: un mundo de canvas a pantalla completa; una sola línea de texto flota cerca del borde inferior; una puerta sin texto es el único control. Paleta pastel fija a propósito (experiencia de un solo ambiente). */
+:root{
+  --lav:#cdbff0; --peach:#fbd3c4; --mint:#c4ead8; --sky:#c3def5; --butter:#fbf0c4; --rose:#f5c9d8;
+  --ink:#4a3f66; --ground:#ece3f5; --halo:rgba(255,248,252,.92);
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+}
+html,body{height:100%}
+body{
+  margin:0; background:var(--ground); color:var(--ink); overflow:hidden;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  font-family:var(--display);
+}
+#world{position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; background:var(--ground)}
+
+#line{
+  position:fixed; left:0; right:0; z-index:5; pointer-events:none; text-align:center;
+  bottom:max(9vh, calc(env(safe-area-inset-bottom,0px) + 28px));
+  padding-left:max(24px, env(safe-area-inset-left,0px));
+  padding-right:max(24px, env(safe-area-inset-right,0px));
+}
+#line span{
+  display:inline-block; max-width:24ch; text-wrap:balance;
+  font-family:'Arial Black','Arial Bold',Gadget,Arial,sans-serif; font-style:normal; font-weight:900;
+  font-size:clamp(1.15rem,3.9vw,1.85rem); line-height:1.5; letter-spacing:-.01em;
+  color:var(--ink);
+  text-decoration-line:underline; text-decoration-style:solid;
+  text-decoration-color:rgba(245,201,216,.75); text-decoration-thickness:.42em;
+  text-underline-offset:-.12em; text-decoration-skip-ink:none;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone;
+  text-shadow:0 0 18px var(--halo);
+  opacity:0; filter:blur(8px); transform:translateY(8px);
+  transition:opacity .8s ease, filter .8s ease, transform .9s ease;
+}
+#line.on span{
+  opacity:1; filter:none; transform:none;
+  transition:opacity 1.5s ease, filter 1.5s ease, transform 2.4s ease;
+}
+
+#flash{
+  position:fixed; inset:0; z-index:4; pointer-events:none; opacity:0;
+  background:radial-gradient(circle at 50% 50%, rgba(255,250,252,.95), rgba(255,250,252,0) 72%);
+  transition:opacity 2.8s ease;
+}
+#flash.on{opacity:.8; transition:opacity 2.2s ease}
+
+#start{
+  position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7vh;
+  background:linear-gradient(180deg,var(--butter) 0%,var(--peach) 42%,var(--rose) 70%,var(--lav) 100%);
+  transition:opacity 2.6s ease; text-align:center;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+}
+#start.gone{opacity:0; pointer-events:none}
+#start h1{
+  margin:0; font-family:'Arial Black','Arial Bold',Gadget,Arial,sans-serif; font-weight:900;
+  font-size:clamp(1.7rem,7vw,3.2rem); line-height:1.35; letter-spacing:-.01em;
+  color:var(--ink); text-wrap:balance; max-width:14ch;
+  text-decoration-line:underline; text-decoration-color:rgba(255,250,252,.7); text-decoration-thickness:.4em;
+  text-underline-offset:-.12em; text-decoration-skip-ink:none;
+  text-shadow:0 0 30px var(--halo);
+}
+.door{
+  position:relative; width:64px; height:104px; padding:0; cursor:pointer;
+  border:2px solid rgba(74,63,102,.4); border-radius:32px 32px 4px 4px;
+  background:linear-gradient(180deg,var(--butter),var(--peach) 60%,var(--rose));
+  box-shadow:0 0 44px 8px rgba(255,244,225,.95);
+  animation:breathe 5s ease-in-out infinite;
+}
+.door::after{content:""; position:absolute; right:11px; top:58px; width:7px; height:7px; border-radius:50%; background:var(--ink); opacity:.5}
+.door:focus-visible{outline:3px solid var(--ink); outline-offset:6px}
+@keyframes breathe{0%,100%{transform:scale(1); box-shadow:0 0 36px 4px rgba(255,244,225,.8)}50%{transform:scale(1.04); box-shadow:0 0 60px 16px rgba(255,244,225,1)}}
+
+#again{
+  position:fixed; z-index:6; left:50%; bottom:max(24px, calc(env(safe-area-inset-bottom,0px) + 20px));
+  width:34px; height:56px; margin-left:-17px; border-radius:17px 17px 3px 3px; animation:none;
+  box-shadow:0 0 26px 4px rgba(255,244,225,.9);
+  opacity:0; pointer-events:none; transition:opacity 4s ease;
+}
+#again::after{right:6px; top:31px; width:4px; height:4px}
+#again.show{opacity:.85; pointer-events:auto}
+
+@media (prefers-reduced-motion:reduce){
+  #line span{filter:none; transform:none}
+  .door{animation:none}
+}
+</style>
+
+<canvas id="world"></canvas>
+<div id="flash"></div>
+<div id="line" aria-live="polite"><span id="lineText"></span></div>
+<button id="again" class="door" type="button" aria-label="un lugar entre lugares"></button>
+<div id="start">
+  <h1>un lugar entre lugares</h1>
+  <button id="go" class="door" type="button" aria-label="un lugar entre lugares"></button>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- guion: solo los textos entregados ---------- */
+var S=[
+ ['cue','door-closed'],
+ 'Hay una puerta.',
+ 'No hace falta que la imagines con claridad.',
+ 'Quizás ya la conoces.',
+ 'Quizás nunca la has visto.',
+ 'Está cerrada, aunque no recuerdas haberla cerrado.',
+ ['cue','door-open'],
+ 'Y ahora está abierta.',
+ 'No recuerdas haberla abierto tampoco.',
+ ['p',4],
+ ['cue','corridor'],
+ 'Del otro lado hay un pasillo.',
+ 'O quizás es el mismo lugar en el que estabas antes.',
+ 'Caminas un poco.',
+ 'O piensas que caminas.',
+ 'Es difícil saberlo cuando no estás prestando atención a tus pies.',
+ '¿Alguna vez has estado en un lugar que sentías haber visitado en un sueño?',
+ ['p',8],
+ ['cue','light'],
+ 'Hay una luz encendida en alguna habitación.',
+ 'No sabes cuál.',
+ ['cue','music'],
+ 'Escuchas música.',
+ 'Te resulta familiar, pero no recuerdas la canción.',
+ 'Suena una y otra vez.',
+ ['cue','far'],
+ 'Tal vez está muy lejos.',
+ ['cue','behind'],
+ 'Tal vez está detrás de ti.',
+ ['p',4],
+ ['cue','elevator'],
+ 'En algún momento estás dentro de un elevador.',
+ ['cue','doors-close'],
+ 'Las puertas se cierran.',
+ ['cue','rise'],
+ 'Comienza a subir.',
+ ['cue','floor1'],'Uno.',
+ ['cue','floor2'],'Dos.',
+ ['cue','floor3'],'Tres.',
+ 'No recuerdas a qué piso ibas.',
+ ['cue','floor4'],'Cuatro.',
+ ['cue','floor5'],'Cinco.',
+ 'La música sigue sonando.',
+ ['cue','doors-open'],
+ 'Se abren las puertas.',
+ ['cue','beyond-water'],
+ 'Hay agua del otro lado.',
+ ['cue','beyond-hall'],
+ 'O un pasillo.',
+ ['cue','beyond-room'],
+ 'O una habitación que se parece mucho a la tuya.',
+ 'No necesitas elegir cuál.',
+ ['cue','doors-close'],
+ 'Las puertas vuelven a cerrarse.',
+ ['p',6],
+ ['cue','void'],
+ '¿Cuánto tiempo llevas aquí?',
+ ['p',4],
+ 'No es necesario responder.',
+ ['part'],
+ ['cue','water'],
+ 'Quizás ahora estás bajo el agua.',
+ 'La superficie está arriba.',
+ 'La luz se mueve, aunque nada más parece moverse.',
+ 'Escuchas algo que no alcanzas a distinguir.',
+ 'No sabes si es la música.',
+ 'No sabes si es tu memoria.',
+ ['p',4],
+ ['cue','room'],
+ 'Recuerdas una habitación.',
+ 'O una habitación te recuerda a ti.',
+ 'Hay algo en ella que te pertenece.',
+ 'Un objeto.',
+ 'Una sombra.',
+ 'La sensación de haber estado ahí cuando eras otra persona.',
+ 'O cuando todavía no sabías quién ibas a ser.',
+ ['p',8],
+ ['cue','morph0'],
+ 'No tienes que encontrar el recuerdo.',
+ 'No tienes que entenderlo.',
+ 'Puedes dejar que cambie.',
+ ['cue','morph1'],
+ 'Una habitación puede convertirse en un pasillo.',
+ ['cue','morph2'],
+ 'El pasillo puede convertirse en una pista.',
+ ['cue','morph3'],
+ 'La pista puede convertirse en una casa.',
+ ['cue','morph4'],
+ 'Y una casa puede ser solamente una idea de casa.',
+ ['part'],
+ ['cue','composite'],
+ ['cue','music-again'],
+ 'La música vuelve a empezar.',
+ ['cue','c-door'],
+ 'Hay una puerta.',
+ ['cue','c-elev'],
+ 'El elevador sigue subiendo.',
+ ['cue','c-water'],
+ 'El agua sigue moviéndose.',
+ ['cue','c-light'],
+ 'En alguna parte, una luz permanece encendida.',
+ ['p',4],
+ 'Quizás ya habías estado aquí.',
+ 'Quizás nunca te fuiste.',
+ 'Quizás acabas de llegar.',
+ ['p',8],
+ ['cue','final'],
+ 'No tienes que salir de este lugar.',
+ 'Tampoco tienes que quedarte.',
+ 'Puedes observarlo un momento más.',
+ 'Puedes inventar lo que falta.',
+ 'O puedes dejarlo incompleto.',
+ ['p',4],
+ ['end']
+];
+
+var RM=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- utilidades de color ---------- */
+var P={lav:[205,191,240],peach:[251,211,196],mint:[196,234,216],sky:[195,222,245],butter:[251,240,196],rose:[245,201,216],white:[255,250,252],plum:[122,102,152]};
+function rgba(c,a){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(a===undefined?1:Math.max(0,Math.min(1,a)))+')';}
+function mix(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function smooth(t){t=clamp(t,0,1);return t*t*(3-2*t);}
+
+/* ---------- canvas ---------- */
+var cv=document.getElementById('world');
+var ctx=cv.getContext('2d');
+var W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth; H=window.innerHeight;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
+/* ---------- estado ---------- */
+var NAMES=['door','corr','light','elev','water','room','morph','voidd'];
+var st={w:{},tg:{}};
+function resetState(){
+  NAMES.forEach(function(n){st.w[n]=0; st.tg[n]=0;});
+  st.doorOpen=0; st.doorOpenT=0;
+  st.floor=0; st.floorT=0; st.rising=0; st.risingT=0;
+  st.elevDoors=1; st.elevDoorsT=1;
+  st.beyond=1; st.beyondT=1;
+  st.lightMode=0; st.lightModeT=0;
+  st.morph=0; st.morphT=0;
+  st.spread=0; st.spreadT=0;
+  st.cycle=false; st.dim=0; st.dimT=0;
+  st.walk=0; st.px=0; st.py=0; st.trans=null;
+}
+resetState();
+function scenes(map){NAMES.forEach(function(n){st.tg[n]=map[n]||0;});}
+
+var orb={x:0,y:0,tx:0,ty:0,idle:0,down:false,trail:[]};
+var ripples=[];
+var bubbles=[];
+for(var bi=0;bi<30;bi++){bubbles.push({x:Math.random(),y:Math.random(),r:2+Math.random()*7,v:.02+Math.random()*.05,ph:Math.random()*6.28});}
+var vp={x:0,y:0};
+var T=0;
+
+function addRipple(x,y,s){ripples.push({x:x,y:y,r:10,a:s?.7:.45});}
+
+/* ---------- dibujo: helpers ---------- */
+function poly(pts,fill){
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+}
+function glow(x,y,r,c,a){
+  var g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,rgba(c,a)); g.addColorStop(.5,rgba(c,a*.35)); g.addColorStop(1,rgba(c,0));
+  ctx.fillStyle=g; ctx.fillRect(x-r,y-r,r*2,r*2);
+}
+function rr(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ---------- fondos ---------- */
+var MORPH_COLS=[P.rose,P.lav,P.sky,P.peach,P.butter];
+function morphColor(m){
+  var i=clamp(Math.floor(m),0,3), f=smooth(m-i);
+  return mix(MORPH_COLS[i],MORPH_COLS[Math.min(i+1,4)],f);
+}
+function bg(name,a){
+  var c0,c1,cm=null;
+  switch(name){
+    case 'door': c0=P.butter; cm=P.peach; c1=P.lav; break;
+    case 'corr': c0=P.sky; c1=P.rose; break;
+    case 'elev': c0=P.mint; c1=mix(P.sky,P.lav,.4); break;
+    case 'water': c0=[214,238,246]; c1=[160,196,234]; break;
+    case 'room': c0=mix(P.butter,P.white,.3); c1=P.peach; break;
+    case 'morph': c0=mix(morphColor(st.morph),P.white,.35); c1=mix(morphColor(Math.min(4,st.morph+1)),P.lav,.35); break;
+    case 'voidd': c0=P.lav; c1=P.sky; break;
+    default: return;
+  }
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,rgba(c0));
+  if(cm) g.addColorStop(.55,rgba(cm));
+  g.addColorStop(1,rgba(c1));
+  ctx.globalAlpha=a; ctx.fillStyle=g; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
+}
+
+/* ---------- escena: puerta ---------- */
+function fgDoor(a,t){
+  var dh=Math.min(H*0.56,Math.min(W,H*.8)*0.9)*(1-st.spread*.15), dw=dh*0.5;
+  var cx=W/2-st.spread*W*0.22+st.px*W*0.02, base=H*0.8+st.py*H*0.02;
+  var x0=cx-dw/2, top=base-dh, o=st.doorOpen;
+  ctx.globalAlpha=a;
+  glow(cx,base-dh*.5,dh*.9,P.butter,.35+.3*o);
+  /* luz que se derrama por el piso */
+  if(o>.02){
+    var gg=ctx.createLinearGradient(0,base,0,H);
+    gg.addColorStop(0,rgba(P.butter,.65*o)); gg.addColorStop(1,rgba(P.butter,0));
+    ctx.fillStyle=gg;
+    ctx.beginPath(); ctx.moveTo(x0+dw*.05,base); ctx.lineTo(x0+dw*.95,base); ctx.lineTo(x0+dw*1.9,H); ctx.lineTo(x0-dw*.9,H); ctx.closePath(); ctx.fill();
+  }
+  /* marco */
+  rr(x0-11,top-11,dw+22,dh+11,10);
+  ctx.fillStyle=rgba(mix(P.rose,P.white,.35)); ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle=rgba(P.plum,.35); ctx.stroke();
+  /* interior luminoso */
+  var ig=ctx.createLinearGradient(0,top,0,base);
+  ig.addColorStop(0,rgba(P.white)); ig.addColorStop(1,rgba(P.butter));
+  ctx.fillStyle=ig; ctx.fillRect(x0,top,dw,dh);
+  /* hoja */
+  var ang=o*1.2, pw=dw*Math.cos(ang), farH=1-0.14*Math.sin(ang), ins=dh*(1-farH)/2;
+  var pg=ctx.createLinearGradient(x0,0,x0+dw,0);
+  pg.addColorStop(0,rgba(P.peach)); pg.addColorStop(1,rgba(P.rose));
+  poly([[x0,top],[x0+pw,top+ins],[x0+pw,base-ins],[x0,base]],pg);
+  ctx.strokeStyle=rgba(P.plum,.3); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x0,top); ctx.lineTo(x0+pw,top+ins); ctx.lineTo(x0+pw,base-ins); ctx.lineTo(x0,base); ctx.closePath(); ctx.stroke();
+  /* paneles de la hoja */
+  ctx.strokeStyle=rgba(P.plum,.16);
+  ctx.strokeRect(x0+pw*.14,top+dh*.08+ins*.4,pw*.72,dh*.34*farH);
+  ctx.strokeRect(x0+pw*.14,top+dh*.52+ins*.4,pw*.72,dh*.38*farH);
+  /* perilla */
+  ctx.fillStyle=rgba(P.plum,.55);
+  ctx.beginPath(); ctx.arc(x0+pw*.86,top+dh*.54,4.5*farH,0,6.283); ctx.fill();
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: pasillo ---------- */
+var DOOR_COLS=[P.peach,P.mint,P.butter,P.rose,P.sky];
+function fgCorr(a,t){
+  var hw0=W*0.7, hh0=H*0.7, N=9;
+  function f(s){return 1/(1+9*s);}
+  function X(s,sg){return vp.x+sg*hw0*f(s);}
+  function Yt(s){return vp.y-hh0*f(s);}
+  function Yb(s){return vp.y+hh0*f(s)*0.9;}
+  ctx.globalAlpha=a;
+  poly([[X(0,-1),Yt(0)],[X(0,1),Yt(0)],[X(1,1),Yt(1)],[X(1,-1),Yt(1)]],rgba(mix(P.rose,P.white,.3)));
+  poly([[X(0,-1),Yb(0)],[X(0,1),Yb(0)],[X(1,1),Yb(1)],[X(1,-1),Yb(1)]],rgba(mix(P.sky,P.white,.2)));
+  poly([[X(0,-1),Yt(0)],[X(1,-1),Yt(1)],[X(1,-1),Yb(1)],[X(0,-1),Yb(0)]],rgba(mix(P.lav,P.white,.25)));
+  poly([[X(0,1),Yt(0)],[X(1,1),Yt(1)],[X(1,1),Yb(1)],[X(0,1),Yb(0)]],rgba(mix(P.mint,P.white,.25)));
+  glow(vp.x,vp.y,Math.min(W,H)*.2,P.white,.85);
+  var list=[];
+  for(var i=0;i<N;i++){
+    var u=((i+st.walk)%N)/N;
+    list.push({s:1-u,i:i});
+  }
+  list.sort(function(p,q){return q.s-p.s;});
+  for(var k=0;k<list.length;k++){
+    var s=list[k].s, id=list[k].i;
+    if(s<0.02) continue;
+    var s2=Math.min(1,s+0.06);
+    var fade=smooth(s/0.12)*smooth((1-s)/0.25);
+    var col=DOOR_COLS[id%5];
+    [-1,1].forEach(function(sg){
+      var c2=sg<0?col:DOOR_COLS[(id+2)%5];
+      var yA=Yt(s)+(Yb(s)-Yt(s))*.2, yB=Yt(s2)+(Yb(s2)-Yt(s2))*.2;
+      poly([[X(s,sg),yA],[X(s2,sg),yB],[X(s2,sg),Yb(s2)],[X(s,sg),Yb(s)]],rgba(c2,.7*fade));
+    });
+    ctx.strokeStyle=rgba(P.white,.55*fade); ctx.lineWidth=1+5*f(s);
+    ctx.beginPath(); ctx.moveTo(X(s,-1),Yt(s)); ctx.lineTo(X(s,1),Yt(s)); ctx.lineTo(X(s,1),Yb(s)); ctx.lineTo(X(s,-1),Yb(s)); ctx.closePath(); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: luz lejana / detrás ---------- */
+function fgLight(a,t){
+  var pulse=.88+.12*Math.sin(t*.7);
+  var far=1-st.lightMode, back=st.lightMode, m=Math.min(W,H);
+  glow(vp.x,vp.y,m*(0.14+0.32*far)*pulse,P.butter,.9*far*a);
+  glow(vp.x,vp.y,m*(0.05+0.08*far)*pulse,P.white,.8*far*a);
+  glow(W*.5-st.px*W*.12,H*1.02,Math.max(W,H)*.62*pulse,P.peach,.7*back*a);
+  glow(W*.5-st.px*W*.12,H*1.04,Math.max(W,H)*.3*pulse,P.butter,.7*back*a);
+}
+
+/* ---------- escena: elevador ---------- */
+function fgElev(a,t){
+  var ew=Math.min(W*0.56,H*0.36)*(1-st.spread*.2), eh=ew*1.5;
+  var cx=W/2+st.spread*W*0.22+st.px*W*0.015, top=H*0.5-eh*0.46, left=cx-ew/2;
+  var e=st.elevDoors, floorDisp=st.cycle?((t*0.35)%5.4):st.floor;
+  ctx.globalAlpha=a;
+  /* indicador de piso (puntos, sin texto) */
+  for(var d=0;d<5;d++){
+    var lit=clamp(floorDisp-d,0,1), dx=cx+(d-2)*ew*.14, dy=top-ew*.1;
+    if(lit>.05) glow(dx,dy,ew*.1,P.butter,.9*lit);
+    ctx.fillStyle=rgba(mix(P.lav,P.butter,lit),.55+.45*lit);
+    ctx.beginPath(); ctx.arc(dx,dy,ew*.022,0,6.283); ctx.fill();
+  }
+  /* marco */
+  rr(left-10,top-10,ew+20,eh+10,8);
+  ctx.fillStyle=rgba(mix(P.lav,P.white,.4)); ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle=rgba(P.plum,.3); ctx.stroke();
+  var ix=left, iy=top, iw=ew, ih=eh;
+  /* lo que hay detrás de las puertas */
+  if(e>.02){
+    ctx.save(); ctx.beginPath(); ctx.rect(ix,iy,iw,ih); ctx.clip();
+    var b=st.beyond;
+    var wW=Math.max(0,1-Math.abs(b)), wH=Math.max(0,1-Math.abs(b-1)), wR=Math.max(0,1-Math.abs(b-2));
+    if(wW>.01){
+      var g1=ctx.createLinearGradient(0,iy,0,iy+ih);
+      g1.addColorStop(0,rgba([214,238,246],wW)); g1.addColorStop(1,rgba([150,192,234],wW));
+      ctx.fillStyle=g1; ctx.fillRect(ix,iy,iw,ih);
+      for(var r=0;r<4;r++){
+        var rx=ix+iw*(.15+r*.24)+Math.sin(t*.5+r)*iw*.04;
+        poly([[rx,iy],[rx+iw*.1,iy],[rx+iw*.2,iy+ih],[rx+iw*.06,iy+ih]],rgba(P.white,.2*wW));
+      }
+    }
+    if(wH>.01){
+      var g2=ctx.createLinearGradient(0,iy,0,iy+ih);
+      g2.addColorStop(0,rgba(P.rose,wH)); g2.addColorStop(1,rgba(P.sky,wH));
+      ctx.fillStyle=g2; ctx.fillRect(ix,iy,iw,ih);
+      var hx=ix+iw/2, hy=iy+ih*.44;
+      ctx.strokeStyle=rgba(P.white,.8*wH); ctx.lineWidth=2;
+      [[0,0],[iw,0],[iw,ih],[0,ih]].forEach(function(p){ctx.beginPath(); ctx.moveTo(ix+p[0],iy+p[1]); ctx.lineTo(hx+(p[0]?1:-1)*iw*.08,hy+(p[1]?1:-1)*ih*.07); ctx.stroke();});
+      ctx.strokeRect(hx-iw*.08,hy-ih*.07,iw*.16,ih*.14);
+      glow(hx,hy,iw*.3,P.white,.9*wH);
+    }
+    if(wR>.01){
+      var g3=ctx.createLinearGradient(0,iy,0,iy+ih);
+      g3.addColorStop(0,rgba(P.butter,wR)); g3.addColorStop(1,rgba(P.peach,wR));
+      ctx.fillStyle=g3; ctx.fillRect(ix,iy,iw,ih);
+      ctx.fillStyle=rgba(P.white,.85*wR); ctx.fillRect(ix+iw*.55,iy+ih*.2,iw*.28,iw*.28);
+      ctx.strokeStyle=rgba(P.plum,.25*wR); ctx.lineWidth=1.5;
+      ctx.strokeRect(ix+iw*.55,iy+ih*.2,iw*.28,iw*.28);
+      poly([[ix+iw*.55,iy+ih*.8],[ix+iw*.83,iy+ih*.8],[ix+iw*.55,iy+ih],[ix+iw*.1,iy+ih]],rgba(P.white,.3*wR));
+    }
+    ctx.restore();
+  }
+  /* puertas del elevador */
+  var half=iw/2, pw=half*(1-e*0.94);
+  var pg=ctx.createLinearGradient(ix,0,ix+iw,0);
+  pg.addColorStop(0,rgba(mix(P.mint,P.white,.2))); pg.addColorStop(.5,rgba(mix(P.lav,P.white,.45))); pg.addColorStop(1,rgba(mix(P.mint,P.white,.2)));
+  ctx.fillStyle=pg;
+  ctx.fillRect(ix,iy,pw,ih); ctx.fillRect(ix+iw-pw,iy,pw,ih);
+  ctx.strokeStyle=rgba(P.plum,.25); ctx.lineWidth=1.5;
+  ctx.strokeRect(ix,iy,pw,ih); ctx.strokeRect(ix+iw-pw,iy,pw,ih);
+  /* reflejo que sube */
+  if(st.rising>.05 || st.cycle){
+    var ry=iy+ih*(1-((t*0.22)%1));
+    var rg=ctx.createLinearGradient(0,ry-ih*.12,0,ry+ih*.12);
+    rg.addColorStop(0,rgba(P.white,0)); rg.addColorStop(.5,rgba(P.white,.5*Math.max(st.rising,st.cycle?1:0))); rg.addColorStop(1,rgba(P.white,0));
+    ctx.fillStyle=rg; ctx.fillRect(ix,ry-ih*.12,pw,ih*.24); ctx.fillRect(ix+iw-pw,ry-ih*.12,pw,ih*.24);
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: agua ---------- */
+function fgWater(a,t){
+  ctx.globalAlpha=a;
+  glow(W*.5+st.px*W*.05,-H*.05,Math.max(W,H)*.7,P.white,.55);
+  for(var i=0;i<3;i++){
+    var x=W*(.2+i*.3)+Math.sin(t*.15+i*2)*W*.05+st.px*W*.03;
+    var rg=ctx.createLinearGradient(0,0,0,H);
+    rg.addColorStop(0,rgba(P.white,.16)); rg.addColorStop(1,rgba(P.white,0));
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+W*.12,0); ctx.lineTo(x+W*.22,H); ctx.lineTo(x-W*.04,H); ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle=rgba(P.white,.55); ctx.lineWidth=1.5;
+  for(var k=0;k<bubbles.length;k++){
+    var b=bubbles[k];
+    var bx=(b.x+Math.sin(t*.4+b.ph)*.02)*W+st.px*b.r*3, by=b.y*H;
+    ctx.beginPath(); ctx.arc(bx,by,b.r,0,6.283); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: habitación ---------- */
+function fgRoom(a,t){
+  var cx=W/2+st.px*W*.05, cy=H*.44+st.py*H*.03;
+  var bwH=Math.min(W*.28,H*.34), bhH=bwH*.75;
+  var bx0=cx-bwH,bx1=cx+bwH,by0=cy-bhH,by1=cy+bhH;
+  var L=-W*.05,R=W*1.05,Tp=-H*.05,B=H*1.05;
+  ctx.globalAlpha=a;
+  poly([[L,Tp],[R,Tp],[bx1,by0],[bx0,by0]],rgba(mix(P.rose,P.white,.4)));
+  poly([[L,B],[R,B],[bx1,by1],[bx0,by1]],rgba(mix(P.peach,P.white,.1)));
+  poly([[L,Tp],[bx0,by0],[bx0,by1],[L,B]],rgba(mix(P.lav,P.white,.35)));
+  poly([[R,Tp],[bx1,by0],[bx1,by1],[R,B]],rgba(mix(P.sky,P.white,.4)));
+  poly([[bx0,by0],[bx1,by0],[bx1,by1],[bx0,by1]],rgba(mix(P.butter,P.white,.3)));
+  /* ventana */
+  var wx=bx0+bwH*2*.58, wy=by0+bhH*2*.16, ww=bwH*2*.3, wh=bhH*2*.42;
+  var wg=ctx.createLinearGradient(0,wy,0,wy+wh);
+  wg.addColorStop(0,rgba(P.white)); wg.addColorStop(1,rgba(P.butter));
+  ctx.fillStyle=wg; ctx.fillRect(wx,wy,ww,wh);
+  glow(wx+ww/2,wy+wh/2,ww*1.4,P.white,.5);
+  ctx.strokeStyle=rgba(P.plum,.28); ctx.lineWidth=2;
+  ctx.strokeRect(wx,wy,ww,wh);
+  ctx.beginPath(); ctx.moveTo(wx+ww/2,wy); ctx.lineTo(wx+ww/2,wy+wh); ctx.moveTo(wx,wy+wh/2); ctx.lineTo(wx+ww,wy+wh/2); ctx.stroke();
+  /* parche de luz en el piso */
+  poly([[wx,by1],[wx+ww,by1],[wx+ww-W*.28,B*.98],[wx-W*.3,B*.98]],rgba(P.white,.28));
+  /* objeto: banquito y esfera */
+  var ox=cx-bwH*.2, oy=by1+(B-by1)*.38, sz=bwH*.34;
+  ctx.save();
+  ctx.translate(ox,oy); ctx.rotate(-0.16+Math.sin(t*.2)*.02);
+  ctx.fillStyle=rgba(P.plum,.2);
+  ctx.beginPath(); ctx.ellipse(-sz*1.6-st.px*sz*.4,sz*.35,sz*2.1,sz*.34,0,0,6.283); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle=rgba(P.plum,.35);
+  ctx.fillRect(ox-sz*.42,oy-sz*.1,sz*.1,sz*.5); ctx.fillRect(ox+sz*.32,oy-sz*.1,sz*.1,sz*.5);
+  rr(ox-sz*.55,oy-sz*.28,sz*1.1,sz*.2,sz*.08); ctx.fillStyle=rgba(P.rose); ctx.fill();
+  ctx.strokeStyle=rgba(P.plum,.3); ctx.lineWidth=1.5; ctx.stroke();
+  var sg=ctx.createRadialGradient(ox-sz*.12,oy-sz*.62,sz*.03,ox,oy-sz*.5,sz*.34);
+  sg.addColorStop(0,rgba(P.white)); sg.addColorStop(1,rgba(P.mint));
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(ox,oy-sz*.55,sz*.3,0,6.283); ctx.fill();
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: forma que cambia ---------- */
+var NP=96;
+function samplePoly(pts){
+  var segs=[],total=0,i;
+  for(i=0;i<pts.length;i++){
+    var p=pts[i],q=pts[(i+1)%pts.length],l=Math.hypot(q[0]-p[0],q[1]-p[1]);
+    segs.push(l); total+=l;
+  }
+  var out=[];
+  for(var n=0;n<NP;n++){
+    var d=total*n/NP, k=0;
+    while(k<segs.length-1 && d>segs[k]){d-=segs[k];k++;}
+    var A=pts[k],Bp=pts[(k+1)%pts.length],f=segs[k]?d/segs[k]:0;
+    out.push([A[0]+(Bp[0]-A[0])*f,A[1]+(Bp[1]-A[1])*f]);
+  }
+  return out;
+}
+function sampleSuper(rx,ry,p){
+  var out=[];
+  for(var n=0;n<NP;n++){
+    var a=n/NP*Math.PI*2, c=Math.cos(a), s=Math.sin(a);
+    out.push([rx*Math.sign(c)*Math.pow(Math.abs(c),2/p),ry*Math.sign(s)*Math.pow(Math.abs(s),2/p)]);
+  }
+  return out;
+}
+var SHAPES=[
+  samplePoly([[-1,-.78],[1,-.78],[1,.78],[-1,.78]]),
+  samplePoly([[-1,-.46],[1,-.17],[1,.17],[-1,.46]]),
+  sampleSuper(1,.6,2.7),
+  samplePoly([[-.7,.6],[-.7,-.05],[0,-.7],[.7,-.05],[.7,.6]]),
+  samplePoly([[-.7,.6],[-.7,-.05],[0,-.7],[.7,-.05],[.7,.6]])
+];
+function fgMorph(a,t){
+  var m=st.morph, i=clamp(Math.floor(m),0,3), f=smooth(m-i);
+  var A=SHAPES[i], Bp=SHAPES[Math.min(i+1,4)];
+  var sx=Math.min(W*.38,H*.42), sy=sx*.95;
+  var cx=W/2+st.px*W*.03, cy=H*.42+st.py*H*.02;
+  var col=mix(morphColor(m),P.plum,.35);
+  var dash=clamp(m-3,0,1);
+  ctx.globalAlpha=a;
+  glow(cx,cy,sx*1.3,P.white,.4);
+  for(var k=0;k<4;k++){
+    var sc=1-k*.13, alpha=(k===0?1:.34-k*.07);
+    var drawN=NP;
+    if(dash>0 && k===0) drawN=Math.floor(NP*(1-.2*dash));
+    ctx.beginPath();
+    for(var j=0;j<=drawN;j++){
+      var jj=j%NP;
+      var x=A[jj][0]+(Bp[jj][0]-A[jj][0])*f, y=A[jj][1]+(Bp[jj][1]-A[jj][1])*f;
+      var br=1+Math.sin(t*.6+jj*.25+k)*.012;
+      var px=cx+x*sx*sc*br, py=cy+y*sy*sc*br;
+      if(j===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    if(!(dash>0 && k===0)) ctx.closePath();
+    if(k===0){
+      ctx.fillStyle=rgba(P.white,.2*(1-dash*.8)); ctx.fill();
+      ctx.lineWidth=3-dash*1.4;
+      ctx.setLineDash(dash>0?[2,6+10*dash]:[]);
+    } else { ctx.lineWidth=1.6; ctx.setLineDash([]); }
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.strokeStyle=rgba(col,alpha);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.globalAlpha=1;
+}
+
+/* ---------- escena: vacío ---------- */
+function fgVoid(a,t){
+  ctx.globalAlpha=a;
+  var br=.85+.15*Math.sin(t*.5);
+  glow(W/2,H*.45,Math.min(W,H)*.55*br,P.white,.5);
+  ctx.globalAlpha=1;
+}
+
+/* ---------- orbe ---------- */
+function drawOrb(t){
+  var R=22+4*Math.sin(t*1.6)+(orb.down?14:0), i;
+  for(i=0;i<orb.trail.length;i++){
+    var p=orb.trail[i], k=i/orb.trail.length;
+    glow(p.x,p.y,R*(.5+.7*k),P.butter,.16*k);
+  }
+  glow(orb.x,orb.y,R*3.2,P.rose,.28);
+  glow(orb.x,orb.y,R*1.7,P.butter,.7);
+  var g=ctx.createRadialGradient(orb.x,orb.y,0,orb.x,orb.y,R);
+  g.addColorStop(0,rgba(P.white,1)); g.addColorStop(.55,rgba(P.white,.85)); g.addColorStop(1,rgba(P.white,0));
+  ctx.fillStyle=g; ctx.fillRect(orb.x-R,orb.y-R,R*2,R*2);
+}
+
+/* ---------- actualizar y dibujar ---------- */
+function update(dt){
+  function k(s){return 1-Math.exp(-dt/s);}
+  NAMES.forEach(function(n){st.w[n]+=(st.tg[n]-st.w[n])*k(2.2);});
+  st.doorOpen+=(st.doorOpenT-st.doorOpen)*k(1.8);
+  st.elevDoors+=(st.elevDoorsT-st.elevDoors)*k(1.1);
+  st.beyond+=(st.beyondT-st.beyond)*k(1.5);
+  st.lightMode+=(st.lightModeT-st.lightMode)*k(2.5);
+  st.morph+=(st.morphT-st.morph)*k(2.6);
+  st.spread+=(st.spreadT-st.spread)*k(2.5);
+  st.dim+=(st.dimT-st.dim)*k(5);
+  st.floor+=(st.floorT-st.floor)*k(.35);
+  st.rising+=(st.risingT-st.rising)*k(1.2);
+  if(st.trans){
+    st.trans.p+=dt/7;
+    if(st.trans.p>=1){NAMES.forEach(function(n){st.w[n]=st.trans.B[n];}); st.trans=null;}
+  }
+
+  orb.idle+=dt;
+  if(orb.idle>4){
+    orb.tx=W/2+Math.sin(T*.17)*W*.2;
+    orb.ty=H*.58+Math.cos(T*.13)*H*.09;
+  }
+  orb.x+=(orb.tx-orb.x)*k(.35);
+  orb.y+=(orb.ty-orb.y)*k(.35);
+  orb.trail.push({x:orb.x,y:orb.y});
+  if(orb.trail.length>14) orb.trail.shift();
+
+  st.px+=((orb.x/W-.5)*2-st.px)*k(.8);
+  st.py+=((orb.y/H-.5)*2-st.py)*k(.8);
+
+  var sp=(.04+Math.max(0,.7-orb.y/H)*.1)*(RM?.4:1);
+  st.walk+=dt*sp*9;
+
+  for(var i=0;i<bubbles.length;i++){
+    var b=bubbles[i];
+    b.y-=b.v*dt*(RM?.4:1);
+    if(b.y<-.05){b.y=1.05; b.x=Math.random();}
+  }
+  for(var r=ripples.length-1;r>=0;r--){
+    var rp=ripples[r]; rp.r+=dt*90; rp.a-=dt*.16;
+    if(rp.a<=0) ripples.splice(r,1);
+  }
+  if(st.w.voidd>.1){
+    voidTimer+=dt;
+    if(voidTimer>2.8){voidTimer=0; addRipple(orb.x,orb.y,false);}
+  }
+}
+var voidTimer=0;
+
+function doorCenter(){
+  var dh=Math.min(H*0.56,Math.min(W,H*.8)*0.9)*(1-st.spread*.15);
+  return {x:W/2-st.spread*W*0.22+st.px*W*0.02, y:H*.8+st.py*H*.02-dh*.5};
+}
+/* pasar de una escena a otra como una mancha que crece desde un punto, mientras la escena anterior se acerca */
+function startTransition(B,ox,oy){
+  var A={}, Bf={};
+  NAMES.forEach(function(n){A[n]=st.w[n]; Bf[n]=B[n]||0;});
+  scenes(B);
+  st.trans={A:A,B:Bf,p:0,ox:ox,oy:oy,R:Math.hypot(Math.max(ox,W-ox),Math.max(oy,H-oy))*1.3};
+}
+function blobPath(ox,oy,R,t){
+  ctx.beginPath();
+  for(var i=0;i<=72;i++){
+    var a=i/72*6.2832;
+    var r=R*(1+.1*Math.sin(a*3+t*1.1)+.06*Math.sin(a*5-t*1.7)+.03*Math.sin(a*8+t*2.3));
+    var x=ox+Math.cos(a)*r, y=oy+Math.sin(a)*r;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+}
+function drawWorld(w,t){
+  var order=['voidd','water','corr','room','morph','elev','door'], cum=0, i, n, v;
+  for(i=0;i<order.length;i++){
+    n=order[i]; v=w[n];
+    if(v<.004) continue;
+    cum+=v; bg(n,v/cum);
+  }
+  if(w.voidd>.004) fgVoid(w.voidd,t);
+  if(w.water>.004) fgWater(w.water,t);
+  if(w.corr>.004) fgCorr(w.corr,t);
+  if(w.room>.004) fgRoom(w.room,t);
+  if(w.morph>.004) fgMorph(w.morph,t);
+  if(w.light>.004) fgLight(w.light,t);
+  if(w.door>.004) fgDoor(w.door,t);
+  if(w.elev>.004) fgElev(w.elev,t);
+}
+function render(t){
+  ctx.globalAlpha=1; ctx.fillStyle='#ece3f5'; ctx.fillRect(0,0,W,H);
+  vp.x=W/2+st.px*W*.12; vp.y=H*.44+st.py*H*.05;
+  var tr=st.trans, i;
+  if(!tr){
+    drawWorld(st.w,t);
+  } else {
+    var e=smooth(tr.p), R=4+tr.R*e;
+    ctx.save();
+    ctx.translate(tr.ox,tr.oy); var s1=1+e*.55; ctx.scale(s1,s1); ctx.translate(-tr.ox,-tr.oy);
+    drawWorld(tr.A,t);
+    ctx.restore();
+    ctx.save();
+    blobPath(tr.ox,tr.oy,R,t); ctx.clip();
+    ctx.translate(tr.ox,tr.oy); var s2=1.25-.25*e; ctx.scale(s2,s2); ctx.translate(-tr.ox,-tr.oy);
+    drawWorld(tr.B,t);
+    ctx.restore();
+    ctx.save();
+    blobPath(tr.ox,tr.oy,R,t);
+    ctx.lineWidth=14; ctx.strokeStyle=rgba(P.white,.12+.3*(1-e)); ctx.stroke();
+    ctx.restore();
+  }
+  if(st.dim>.004){ctx.fillStyle=rgba(mix(P.lav,P.white,.6),st.dim*.3); ctx.fillRect(0,0,W,H);}
+  for(i=0;i<ripples.length;i++){
+    var rp=ripples[i];
+    ctx.strokeStyle=rgba(P.white,rp.a); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(rp.x,rp.y,rp.r,0,6.283); ctx.stroke();
+    ctx.strokeStyle=rgba(P.rose,rp.a*.6); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(rp.x,rp.y,rp.r*.72,0,6.283); ctx.stroke();
+  }
+  drawOrb(t);
+}
+
+var last=0;
+function frame(ts){
+  var dt=Math.min(.05,(ts-last)/1000||.016); last=ts; T+=dt;
+  update(dt); render(T);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- audio ---------- */
+/* Poco material a propósito: un zumbido grave con batidos, una melodía lejana, desafinada y con huecos, y burbujas sueltas */
+var A=null;
+var MEL=[622.25,659.25,493.88,466.16,493.88,415.3,554.37];
+function startAudio(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) return;
+  var ac=new AC();
+  if(ac.resume) ac.resume();
+  var master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
+  var lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2400; lp.connect(master);
+  var droneG=ac.createGain(); droneG.gain.value=0; droneG.connect(lp);
+  [[55,.05],[110,.07],[111.2,.07],[220,.02],[224,.02]].forEach(function(p){
+    var o=ac.createOscillator(); o.type='sine'; o.frequency.value=p[0];
+    var g=ac.createGain(); g.gain.value=p[1]; o.connect(g); g.connect(droneG); o.start();
+  });
+  var melLP=ac.createBiquadFilter(); melLP.type='lowpass'; melLP.frequency.value=1500;
+  var melG=ac.createGain(); melG.gain.value=0; melLP.connect(melG); melG.connect(lp);
+  var nb=ac.createBuffer(1,ac.sampleRate*3,ac.sampleRate), nd=nb.getChannelData(0), lastN=0;
+  for(var i=0;i<nd.length;i++){lastN=(lastN+.02*(Math.random()*2-1))/1.02; nd[i]=lastN*3.5;}
+  A={ac:ac,master:master,lp:lp,bus:lp,droneG:droneG,melLP:melLP,melG:melG,nb:nb,melOn:false,step:0,nextT:0,curLP:2400,bub:0};
+  master.gain.setTargetAtTime(.9,ac.currentTime,1.5);
+  droneG.gain.setTargetAtTime(1,ac.currentTime,3);
+  setInterval(melodyTick,200);
+  bubbleLoop();
+}
+function note(when,freq){
+  var ac=A.ac, o=ac.createOscillator(), g=ac.createGain();
+  o.type='sine'; o.frequency.value=freq*Math.pow(2,(Math.random()*40-20)/1200);
+  g.gain.setValueAtTime(0,when); g.gain.linearRampToValueAtTime(.2,when+.02); g.gain.exponentialRampToValueAtTime(.0001,when+3.2);
+  o.connect(g); g.connect(A.melLP); o.start(when); o.stop(when+3.3);
+}
+function melodyTick(){
+  if(!A) return;
+  var now=A.ac.currentTime;
+  if(!A.melOn){A.nextT=now+.1; return;}
+  while(A.nextT<now+.6){
+    if(Math.random()>.18) note(A.nextT,MEL[A.step%MEL.length]);
+    A.step++; A.nextT+=2.3+Math.random()*.8;
+    if(A.step%MEL.length===0) A.nextT+=3;
+  }
+}
+function mood(o){
+  if(!A) return;
+  var t=A.ac.currentTime, tc=o.tc||2.2;
+  if(o.mel!==undefined) A.melG.gain.setTargetAtTime(o.mel,t,tc);
+  if(o.melLP!==undefined) A.melLP.frequency.setTargetAtTime(o.melLP,t,tc);
+  if(o.lp!==undefined){A.curLP=o.lp; A.lp.frequency.setTargetAtTime(o.lp,t,tc);}
+  if(o.drone!==undefined) A.droneG.gain.setTargetAtTime(o.drone,t,tc);
+  if(o.bub!==undefined) A.bub=o.bub;
+}
+/* burbujas: un "blup" corto que sube de tono, a ritmo irregular */
+function blup(vol){
+  var ac=A.ac, t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+  var f=260+Math.random()*520;
+  o.type='sine'; o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*2.2,t+.07);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.008); g.gain.exponentialRampToValueAtTime(.0001,t+.13);
+  o.connect(g); g.connect(A.master); o.start(t); o.stop(t+.15);
+}
+function bubbleLoop(){
+  if(A && A.bub>.02){
+    blup(.05+.13*A.bub);
+    if(Math.random()<.45) setTimeout(function(){if(A) blup(.04+.1*A.bub);},50+Math.random()*130);
+  }
+  setTimeout(bubbleLoop,120+Math.random()*(750-520*(A?A.bub:0)));
+}
+function sfxDoor(){
+  if(!A) return;
+  var ac=A.ac, s=ac.createBufferSource(); s.buffer=A.nb;
+  var bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=620; bp.Q.value=.7;
+  var g=ac.createGain(), t=ac.currentTime;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.2,t+.5); g.gain.linearRampToValueAtTime(0,t+1.5);
+  s.connect(bp); bp.connect(g); g.connect(A.bus); s.start(t); s.stop(t+1.6);
+}
+function clickSfx(){
+  if(!A) return;
+  var ac=A.ac, t=ac.currentTime;
+  var o=ac.createOscillator(), g=ac.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(2200,t); o.frequency.exponentialRampToValueAtTime(900,t+.045);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.22,t+.002); g.gain.exponentialRampToValueAtTime(.0001,t+.07);
+  o.connect(g); g.connect(A.master); o.start(t); o.stop(t+.08);
+  var s=ac.createBufferSource(); s.buffer=A.nb;
+  var hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=3000;
+  var ng=ac.createGain(); ng.gain.setValueAtTime(.35,t); ng.gain.exponentialRampToValueAtTime(.0001,t+.025);
+  s.connect(hp); hp.connect(ng); ng.connect(A.master); s.start(t,Math.random()*2); s.stop(t+.04);
+}
+function tick(n){
+  if(!A) return;
+  var ac=A.ac, o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime;
+  o.type='sine'; o.frequency.value=520*Math.pow(1.122,n);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.12,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+.6);
+  o.connect(g); g.connect(A.bus); o.start(t); o.stop(t+.7);
+}
+
+/* ---------- señales del guion ---------- */
+var flashEl=document.getElementById('flash');
+var againEl=document.getElementById('again');
+function runCue(name){
+  switch(name){
+    case 'door-closed': scenes({door:1}); break;
+    case 'door-open': st.doorOpenT=1; sfxDoor(); break;
+    case 'corridor': var dc=doorCenter(); startTransition({corr:1},dc.x,dc.y); break;
+    case 'light': scenes({corr:1,light:1}); st.lightModeT=0; break;
+    case 'music': if(A){A.melOn=true;} mood({mel:.4,melLP:1100}); break;
+    case 'far': st.lightModeT=0; mood({mel:.15,melLP:420,tc:3}); break;
+    case 'behind': st.lightModeT=1; mood({mel:.3,melLP:650,tc:3}); break;
+    case 'elevator': startTransition({elev:1},vp.x,vp.y); st.elevDoorsT=1; st.beyondT=1; mood({mel:.35,melLP:1500}); break;
+    case 'doors-close': st.elevDoorsT=0; sfxDoor(); break;
+    case 'rise': st.risingT=1; mood({drone:1.8}); break;
+    case 'floor1': st.floorT=1; tick(1); break;
+    case 'floor2': st.floorT=2; tick(2); break;
+    case 'floor3': st.floorT=3; tick(3); break;
+    case 'floor4': st.floorT=4; tick(4); break;
+    case 'floor5': st.floorT=5; tick(5); break;
+    case 'doors-open': st.elevDoorsT=1; st.risingT=0; sfxDoor(); mood({drone:1,mel:.4}); break;
+    case 'beyond-water': st.beyondT=0; mood({bub:.35,lp:1100}); break;
+    case 'beyond-hall': st.beyondT=1; mood({bub:0,lp:2400}); break;
+    case 'beyond-room': st.beyondT=2; break;
+    case 'void': scenes({voidd:1}); st.elevDoorsT=0; mood({mel:.1,melLP:600,drone:.8,tc:3}); break;
+    case 'water': scenes({water:1,voidd:.25}); mood({bub:1,lp:650,mel:.1,melLP:300,tc:3}); break;
+    case 'room': scenes({room:1}); mood({bub:0,lp:2400,mel:0,tc:4}); break;
+    case 'morph0': scenes({morph:1}); st.morphT=0; break;
+    case 'morph1': st.morphT=1; break;
+    case 'morph2': st.morphT=2; break;
+    case 'morph3': st.morphT=3; break;
+    case 'morph4': st.morphT=4; break;
+    case 'composite': scenes({morph:0}); st.cycle=false; st.spreadT=1; st.beyondT=1; st.elevDoorsT=1; break;
+    case 'music-again': if(A){A.step=0; A.nextT=A.ac.currentTime+.2; A.melOn=true;} mood({mel:.4,melLP:1500,tc:2.5}); break;
+    case 'c-door': st.tg.door=.75; st.doorOpenT=1; break;
+    case 'c-elev': st.tg.elev=.7; st.cycle=true; mood({drone:1.3}); break;
+    case 'c-water': st.tg.water=.7; mood({bub:.5,lp:1800}); break;
+    case 'c-light': st.tg.light=.7; st.lightModeT=0; break;
+    case 'final': st.tg.door=.55; st.tg.elev=.5; st.tg.water=.55; st.tg.light=.6; st.dimT=1; mood({mel:.22,drone:.9,bub:.2,tc:4}); break;
+  }
+}
+
+/* ---------- motor del guion ---------- */
+var idx=0, timer=null, started=false;
+var lineWrap=document.getElementById('line'), lineText=document.getElementById('lineText');
+function showLine(txt){
+  lineText.textContent=txt.replace(/\.$/,'');
+  void lineWrap.offsetWidth;
+  lineWrap.classList.add('on');
+}
+function hideLine(){lineWrap.classList.remove('on');}
+function holdMs(txt){
+  var n=txt.length;
+  return n<=7?1700:Math.min(7500,2200+n*62);
+}
+function next(){
+  var it=S[idx++];
+  if(it===undefined){return;}
+  if(typeof it==='string'){
+    showLine(it);
+    timer=setTimeout(function(){hideLine(); timer=setTimeout(next,900);},holdMs(it));
+    return;
+  }
+  switch(it[0]){
+    case 'cue': runCue(it[1]); next(); break;
+    case 'p': hideLine(); timer=setTimeout(next,it[1]*1000); break;
+    case 'part':
+      hideLine();
+      flashEl.classList.add('on'); mood({mel:0,tc:1.6});
+      setTimeout(function(){flashEl.classList.remove('on');},2300);
+      timer=setTimeout(next,5500); break;
+    case 'end':
+      hideLine(); againEl.classList.add('show'); break;
+  }
+}
+
+var startEl=document.getElementById('start');
+function begin(){
+  if(started) return;
+  started=true;
+  startAudio();
+  try{ if(navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request('screen').catch(function(){}); }catch(e){}
+  startEl.classList.add('gone');
+  runCue('door-closed');
+  mood({drone:1});
+  timer=setTimeout(next,3800);
+}
+function restart(){
+  clearTimeout(timer);
+  againEl.classList.remove('show');
+  hideLine();
+  resetState();
+  ripples.length=0;
+  if(A){A.melOn=false; mood({mel:0,melLP:1500,lp:2400,bub:0,drone:1,tc:1});}
+  idx=0;
+  runCue('door-closed');
+  timer=setTimeout(next,3000);
+}
+document.getElementById('go').addEventListener('click',begin);
+againEl.addEventListener('click',restart);
+
+/* ---------- entrada ---------- */
+window.addEventListener('pointermove',function(e){orb.tx=e.clientX; orb.ty=e.clientY; orb.idle=0;});
+window.addEventListener('pointerdown',function(e){
+  orb.tx=e.clientX; orb.ty=e.clientY; orb.idle=0; orb.down=true; addRipple(e.clientX,e.clientY,true); clickSfx();
+  if(A) A.lp.frequency.setTargetAtTime(A.curLP*1.8,A.ac.currentTime,.4);
+});
+function release(){
+  orb.down=false;
+  if(A) A.lp.frequency.setTargetAtTime(A.curLP,A.ac.currentTime,.8);
+}
+window.addEventListener('pointerup',release);
+window.addEventListener('pointercancel',release);
+window.addEventListener('keydown',function(e){
+  var s=60, k=e.key, moved=true;
+  if(k==='ArrowLeft'||k==='a') orb.tx-=s;
+  else if(k==='ArrowRight'||k==='d') orb.tx+=s;
+  else if(k==='ArrowUp'||k==='w') orb.ty-=s;
+  else if(k==='ArrowDown'||k==='s') orb.ty+=s;
+  else moved=false;
+  if(moved){orb.tx=clamp(orb.tx,0,W); orb.ty=clamp(orb.ty,0,H); orb.idle=0;}
+});
+window.addEventListener('resize',resize);
+
+resize();
+orb.x=orb.tx=W/2; orb.y=orb.ty=H*.62;
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
